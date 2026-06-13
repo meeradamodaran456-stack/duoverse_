@@ -1,0 +1,235 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                   String                 @id @default(uuid())
+  email                String                 @unique
+  passwordHash         String
+  name                 String
+  avatarUrl            String?
+  coupleId             String?
+  couple               Couple?                @relation(fields: [coupleId], references: [id])
+  coupleKey            String?                @unique
+  accessibilitySettings AccessibilitySettings?
+  sentMessages         Message[]              @relation("SentMessages")
+  calls                Call[]                 @relation("UserCalls")
+  diaryEntries         DiaryEntry[]
+  moodUpdates          MoodUpdate[]
+  sentLoveNotes        LoveNote[]             @relation("SentLoveNotes")
+  createdCapsules      MemoryCapsule[]        @relation("CreatedCapsules")
+  answers              DailyAnswer[]
+  sleepLogs            SleepLog[]
+  createdAt            DateTime               @default(now())
+}
+
+model Couple {
+  id              String           @id @default(uuid())
+  user1Id         String
+  user2Id         String
+  nicknameUser1   String?
+  nicknameUser2   String?
+  anniversary     DateTime?
+  themeColor      String           @default("#4F46E5")
+  createdAt       DateTime         @default(now())
+  lastInteraction DateTime         @default(now())
+  users           User[]
+  messages        Message[]
+  memories        Memory[]
+  calls           Call[]
+  diaryEntries    DiaryEntry[]
+  tasks           Task[]
+  calendarEvents  CalendarEvent[]
+  bookmarks       Bookmark[]
+  loveNotes       LoveNote[]
+  memoryCapsules  MemoryCapsule[]
+  customization   Customization?
+  sleepLogs       SleepLog[]
+}
+
+model AccessibilitySettings {
+  id                   String  @id @default(uuid())
+  userId               String  @unique
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  highContrast         Boolean @default(false)
+  largeText            Boolean @default(false)
+  screenReaderOptimized Boolean @default(false)
+  voiceCommandsEnabled Boolean @default(false)
+  subtitlesEnabled     Boolean @default(true)
+}
+
+model Message {
+  id                     String    @id @default(uuid())
+  coupleId               String
+  couple                 Couple    @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  senderId               String
+  sender                 User      @relation("SentMessages", fields: [senderId], references: [id])
+  type                   String    @default("TEXT") // TEXT, AUDIO, IMAGE, VIDEO, CALL_LOG
+  content                String
+  fileUrl                String?
+  replyToId              String?
+  replyToMessage         Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies                Message[] @relation("MessageReplies")
+  reactions              String    @default("[]") // JSON string of user reactions, e.g., [{"userId": "...", "emoji": "❤️"}]
+  isDeletedForEveryone   Boolean   @default(false)
+  isDisappearing         Boolean   @default(false)
+  scheduledFor           DateTime?
+  createdAt              DateTime  @default(now())
+  readAt                 DateTime?
+}
+
+model Memory {
+  id          String   @id @default(uuid())
+  coupleId    String
+  couple      Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  mediaUrl    String
+  mediaType   String   // IMAGE, VIDEO
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model Call {
+  id        String   @id @default(uuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  callerId  String
+  caller    User     @relation("UserCalls", fields: [callerId], references: [id])
+  type      String   // AUDIO, VIDEO
+  status    String   // MISSED, COMPLETED, NO_ANSWER
+  duration  Int      @default(0) // In seconds
+  createdAt DateTime @default(now())
+}
+
+model DiaryEntry {
+  id        String   @id @default(uuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  mood      String?
+  mediaUrl  String?
+  isPrivate Boolean  @default(false)
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id        String    @id @default(uuid())
+  coupleId  String
+  couple    Couple    @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  title     String
+  completed Boolean   @default(false)
+  category  String    @default("TASK") // TASK, SHOPPING
+  dueDate   DateTime?
+  createdBy String
+  createdAt DateTime  @default(now())
+}
+
+model CalendarEvent {
+  id        String   @id @default(uuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  title     String
+  date      DateTime
+  category  String   @default("EVENT") // ANNIVERSARY, BIRTHDAY, EVENT
+  createdBy String
+  createdAt DateTime @default(now())
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  title     String
+  url       String?
+  content   String?
+  createdBy String
+  createdAt DateTime @default(now())
+}
+
+model MoodUpdate {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood      String
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model LoveNote {
+  id        String   @id @default(uuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation("SentLoveNotes", fields: [senderId], references: [id], onDelete: Cascade)
+  type      String   // HUG, KISS, NOTE
+  content   String?
+  createdAt DateTime @default(now())
+}
+
+model MemoryCapsule {
+  id          String   @id @default(uuid())
+  coupleId    String
+  couple      Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  mediaUrl    String?
+  mediaType   String?  // IMAGE, VIDEO
+  unlockDate  DateTime
+  createdById String
+  createdBy   User     @relation("CreatedCapsules", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model DailyQuestion {
+  id       String        @id @default(uuid())
+  question String
+  date     DateTime      @unique
+  answers  DailyAnswer[]
+}
+
+model DailyAnswer {
+  id         String        @id @default(uuid())
+  questionId String
+  question   DailyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer     String
+  createdAt  DateTime      @default(now())
+}
+
+model Customization {
+  id           String   @id @default(uuid())
+  coupleId     String   @unique
+  couple       Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  themeName      String   @default("ROMANTIC")
+  wallpaperUrl   String?
+  fontName       String   @default("Outfit")
+  accentColor    String   @default("#EC4899")
+  secondaryColor String?
+  bubbleColor    String?
+  animatedEffect String?
+  createdAt    DateTime @default(now())
+}
+
+model SleepLog {
+  id          String   @id @default(uuid())
+  coupleId    String
+  couple      Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sleepTime   DateTime // When they said good night
+  wakeTime    DateTime? // When they said good morning
+  duration    Int?     // Duration in minutes
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
