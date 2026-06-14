@@ -5,6 +5,7 @@ workflows:
       vars:
         PACKAGE_NAME: "com.example.app"
     scripts:
+      - cd client
       - npm install
       - npm run build
       - npx cap sync android
