@@ -350,6 +350,6 @@ io.on('connection', async (socket) => {
 });
 
 // Start Server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });

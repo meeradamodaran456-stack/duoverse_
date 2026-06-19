@@ -1,12 +1,16 @@
-scripts:
-  - |
-      cd client
-      npm install
-      npm run build
-      npx cap sync android
-      cd android
-      chmod +x gradlew
-      ./gradlew assembleDebug
+workflows:
+  android-workflow:
+    name: Android Build
 
-artifacts:
-  - client/android/app/build/outputs/apk/debug/*.apk
+    scripts:
+      - |
+          cd client
+          npm install
+          npm run build
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+    artifacts:
+      - client/android/app/build/outputs/apk/debug/*.apk
